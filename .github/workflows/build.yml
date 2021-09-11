@@ -16,7 +16,7 @@ jobs:
     - name: dotnet publish
       shell: cmd
       run: |
-        dotnet publish -o bin\publish -c Debug -p:PublishSingleFile=true --no-self-contained
+        dotnet publish -o bin\publish -c Debug -p:PublishSingleFile=true --no-self-contained -r win-x64
     - name: artifact
       uses: actions/upload-artifact@v1.0.0
       with:
