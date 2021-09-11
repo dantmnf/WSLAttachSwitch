@@ -54,9 +54,9 @@ namespace WSLAttachSwitch
                 else
                 {
                     network = FindNetworkByName(networkName);
+                    var netprops = network.QueryProperites();
+                    netid = new Guid(netprops.GetProperty("ID").GetString());
                 }
-                var netprops = network.QueryProperites();
-                netid = new Guid(netprops.GetProperty("ID").GetString());
                 var epid = XorGuid(netid, Encoding.UTF8.GetBytes("WSL2BrdgEp"));
                 var eps = ComputeNetworkEndpoint.Enumerate();
                 if (Array.Exists(eps, x => x == epid))
@@ -91,7 +91,7 @@ namespace WSLAttachSwitch
             if (args.Length != 1)
             {
                 Console.WriteLine("Usage: {0} <network name or GUID>", AppDomain.CurrentDomain.FriendlyName);
-                Console.WriteLine("Check Check availiable networks with `hnsdiag list networks`");
+                Console.WriteLine("Check availiable networks with `hnsdiag list networks`");
                 status = 1;
             }
             else
