@@ -1,0 +1,54 @@
+name: build-release
+
+on:
+  push:
+    tags: [ '**' ]
+
+jobs:
+  build-amd64:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: dotnet publish
+      shell: cmd
+      run: |
+        dotnet publish -o bin\publish -c Debug -p:PublishSingleFile=true --no-self-contained
+    - name: artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: WSLAttachSwitch
+        # Directory containing files to upload
+        path: bin/publish
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        draft: true
+        prerelease: false
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: bin/publish/WSLAttachSwitch.exe
+        asset_name: WSLAttachSwitch.exe
+        asset_content_type: application/octet-stream
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: bin/publish/WSLAttachSwitch.pdb
+        asset_name: WSLAttachSwitch.pdb
+        asset_content_type: application/octet-stream
