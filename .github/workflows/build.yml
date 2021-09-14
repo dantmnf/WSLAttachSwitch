@@ -34,4 +34,3 @@ jobs:
         files: |
           bin/publish/WSLAttachSwitch.exe
           bin/publish/WSLAttachSwitch.pdb
-          *.jar
