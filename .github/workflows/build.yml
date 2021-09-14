@@ -24,3 +24,14 @@ jobs:
         name: WSLAttachSwitch
         # Directory containing files to upload
         path: bin/publish
+    - name: prerelease
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Latest Development Build"
+        files: |
+          bin/publish/WSLAttachSwitch.exe
+          bin/publish/WSLAttachSwitch.pdb
+          *.jar
