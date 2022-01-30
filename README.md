@@ -1,6 +1,10 @@
 WSLAttachSwitch
 ===============
 
+## UPDATE
+This feature is officially available on WSL2 preview, see https://github.com/microsoft/WSL/issues/4150#issuecomment-1018524753 for details.
+
+## Overview
 This tool attaches the WSL2 virtual machine to a Hyper-V virtual switch.
 
 Get prebuilt binaries from [Releases](https://github.com/dantmnf/WSLAttachSwitch/releases) or Actions artifacts [![build](https://github.com/dantmnf/WSLAttachSwitch/actions/workflows/build.yml/badge.svg)](https://github.com/dantmnf/WSLAttachSwitch/actions/workflows/build.yml).
