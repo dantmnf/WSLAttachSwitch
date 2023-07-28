@@ -1,13 +1,22 @@
 WSLAttachSwitch
 ===============
 
-## UPDATE
-This feature is officially available on WSL2 preview, see https://github.com/microsoft/WSL/issues/4150#issuecomment-1018524753 for details.
-
 ## Overview
-This tool attaches the WSL2 virtual machine to a Hyper-V virtual switch.
+
+This tool is expected to be used to **attach any number of Hyper-V virtual switches** to a WSL2 virtual machine (`eth1, eth2, eth3, ...`).
 
 Get prebuilt binaries from [Releases](https://github.com/dantmnf/WSLAttachSwitch/releases) or Actions artifacts [![build](https://github.com/dantmnf/WSLAttachSwitch/actions/workflows/build.yml/badge.svg)](https://github.com/dantmnf/WSLAttachSwitch/actions/workflows/build.yml).
+
+If your need is not to attach multiple switches, but to replace the switch to which the default (`eth0`) NIC is attached,
+then it is officially available on WSL2 preview, check [this comment](https://github.com/microsoft/WSL/issues/4150#issuecomment-1018524753) for details.
+
+## Arguments
+```
+--network <network>          Network name or GUID. Example: Ethernet
+--mac-address <mac-address>  Optional. Fix physical address of network interface to this mac address if specificated. Example: 00-11-45-14-19-19
+--version                    Show version information
+-?, -h, --help               Show help and usage information
+```
 
 ## Example
 ```console

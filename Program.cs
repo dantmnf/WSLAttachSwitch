@@ -96,8 +96,8 @@ namespace WSLAttachSwitch
         /// <summary>
         /// Attach a Hyper-V virtual switch to the WSL2 virtual machine 
         /// </summary>
-        /// <param name="network">network name or GUID</param>
-        /// <param name="macAddress">Fix physical address of network interface to this mac address if specificated</param>
+        /// <param name="network">Network name or GUID. Example: Ethernet</param>
+        /// <param name="macAddress">Optional. Fix physical address of network interface to this mac address if specificated. Example: 00-11-45-14-19-19</param>
         static void Main(string network, string macAddress = null)
         {
             var status = 0;
