@@ -12,11 +12,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 7.0.x
     - name: dotnet publish
       shell: cmd
       run: |
-        dotnet publish -o bin\publish -c Debug -p:PublishSingleFile=true --no-self-contained -r win-x64
+        dotnet publish -o bin\publish -c Debug -r win-x64
     - name: artifact
       uses: actions/upload-artifact@v1.0.0
       with:
