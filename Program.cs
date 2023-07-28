@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.CommandLine;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using WSLAttachSwitch.ComputeService;
 
 namespace WSLAttachSwitch
@@ -37,11 +37,11 @@ namespace WSLAttachSwitch
             return new Guid(guidbytes);
         }
 
-        static bool Attach(string networkName, string macAddress = null, int vlanIsolationId = -1)
+        static bool Attach(string networkName, string macAddress = null, int? vlanIsolationId = null)
         {
             try
             {
-                var systems = ComputeSystem.Enumerate(new { Owners = new[] { "WSL" } });
+                var systems = ComputeSystem.Enumerate(new JsonObject { ["Owners"] = new JsonArray("WSL") });
                 if (systems.Length != 1)
                 {
                     Console.Error.WriteLine("Can't find unique WSL VM. Is WSL2 running?");
@@ -61,7 +61,7 @@ namespace WSLAttachSwitch
                     var netprops = network.QueryProperites();
                     netid = new Guid(netprops.GetProperty("ID").GetString());
                 }
-                var epid = XorGuid(netid, Encoding.UTF8.GetBytes("WSL2BrdgEp"));
+                var epid = XorGuid(netid, "WSL2BrdgEp"u8);
                 var eps = ComputeNetworkEndpoint.Enumerate();
                 if (Array.Exists(eps, x => x == epid))
                 {
@@ -78,26 +78,27 @@ namespace WSLAttachSwitch
                         return true;
                     }
                 }
-                object policies = null;
-                if (vlanIsolationId >= 0)
+                JsonNode policies = null;
+                if (vlanIsolationId != null)
                 {
-                    policies = new object[] {
-                        new
+                    policies = new JsonArray(
+                        new JsonObject
                         {
-                            Type = "VLAN",
-                            Settings = new { IsolationId = (uint) vlanIsolationId },
+                            ["Type"] = "VLAN",
+                            ["Settings"] = new JsonObject { ["IsolationId"] = (int)vlanIsolationId },
                         }
-                    };
+                    );
                 }
-                using var endpoint = ComputeNetworkEndpoint.Create(network, epid, new {
-                    VirtualNetwork = netid.ToString(),
-                    MacAddress = macAddress,
-                    Policies = policies
+                using var endpoint = ComputeNetworkEndpoint.Create(network, epid, new JsonObject
+                {
+                    ["VirtualNetwork"] = netid.ToString(),
+                    ["MacAddress"] = macAddress,
+                    ["Policies"] = policies
                 });
                 system.Modify(
                     "VirtualMachine/Devices/NetworkAdapters/bridge_" + netid.ToString("N"),
                     ModifyRequestType.Add,
-                    new { EndpointId = epid.ToString(), MacAddress = macAddress },
+                    new JsonObject { ["EndpointId"] = epid.ToString(), ["MacAddress"] = macAddress },
                     null
                 );
             }
@@ -208,7 +209,7 @@ namespace WSLAttachSwitch
 
             command.SetHandler((network, macAddress, vlanId) =>
             {
-                status = Attach(network, macAddress, vlanId ?? -1) ? 0 : 1;
+                status = Attach(network, macAddress, vlanId) ? 0 : 1;
 
             }, networkArg, macAddressOption, vlanIdOption);
 

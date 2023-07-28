@@ -27,8 +27,8 @@ namespace WSLAttachSwitch.ComputeService
         public static Guid[] Enumerate()
         {
             HcnEnumerateNetworks("", out var networks, out _);
-            var doc = JsonSerializer.Deserialize<JsonElement>(networks);
-            return doc.EnumerateArray().Select(x => new Guid(x.GetString())).ToArray();
+            var doc = JsonDocument.Parse(networks);
+            return doc.RootElement.EnumerateArray().Select(x => new Guid(x.GetString())).ToArray();
         }
 
 
@@ -40,8 +40,8 @@ namespace WSLAttachSwitch.ComputeService
         public JsonElement QueryProperites()
         {
             HcnQueryNetworkProperties(this, "", out var response, out _);
-            var doc = JsonSerializer.Deserialize<JsonElement>(response);
-            return doc;
+            var doc = JsonDocument.Parse(response);
+            return doc.RootElement;
         }
 
         public override bool IsInvalid => handle == IntPtr.Zero;

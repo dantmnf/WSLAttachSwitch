@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace WSLAttachSwitch.ComputeService
 {
@@ -30,10 +31,10 @@ namespace WSLAttachSwitch.ComputeService
         private static extern void HcsModifyComputeSystem(ComputeSystem computeSystem, HcsOperation operation, string configuration, IntPtr identity);
 
 
-        public static JsonElement[] Enumerate(object query = null)
+        public static JsonElement[] Enumerate(JsonObject query = null)
         {
             using var op = new HcsOperation();
-            var querydoc = query == null ? null : JsonSerializer.Serialize(query);
+            var querydoc = query?.ToJsonString();
             HcsEnumerateComputeSystems(querydoc, op);
             var resultdoc = op.Result;
             var doc = JsonDocument.Parse(resultdoc);
@@ -60,21 +61,27 @@ namespace WSLAttachSwitch.ComputeService
             return doc.RootElement;
         }
 
-        public JsonElement QueryProperites(object query)
+        public JsonElement QueryProperites(JsonObject query)
         {
             using var op = new HcsOperation();
-            var querydoc = JsonSerializer.Serialize(query);
+            var querydoc = query?.ToJsonString();
             HcsGetComputeSystemProperties(this, op, querydoc);
             var resultdoc = op.Result;
             var doc = JsonDocument.Parse(resultdoc);
             return doc.RootElement;
         }
 
-        public string Modify(string resourcePath, ModifyRequestType requestType, object settings, object guestRequest)
+        public string Modify(string resourcePath, ModifyRequestType requestType, JsonObject settings, JsonObject guestRequest)
         {
-            var request = new { ResourcePath = resourcePath, RequestType = requestType.ToString(), Settings = settings, GuestRequest = guestRequest };
+            var request = new JsonObject
+            {
+                ["ResourcePath"] = resourcePath,
+                ["RequestType"] = requestType.ToString(),
+                ["Settings"] = settings,
+                ["GuestRequest"] = guestRequest,
+            };
             using var op = new HcsOperation();
-            var querydoc = JsonSerializer.Serialize(request);
+            var querydoc = request.ToJsonString();
             HcsModifyComputeSystem(this, op, querydoc, IntPtr.Zero);
             var resultdoc = op.Result;
             return resultdoc;

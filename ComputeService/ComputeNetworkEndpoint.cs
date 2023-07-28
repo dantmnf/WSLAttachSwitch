@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace WSLAttachSwitch.ComputeService
 {
@@ -30,8 +31,8 @@ namespace WSLAttachSwitch.ComputeService
         public static Guid[] Enumerate()
         {
             HcnEnumerateEndpoints("", out var endpoints, out _);
-            var doc = JsonSerializer.Deserialize<JsonElement>(endpoints);
-            return doc.EnumerateArray().Select(x => new Guid(x.GetString())).ToArray();
+            var doc = JsonDocument.Parse(endpoints);
+            return doc.RootElement.EnumerateArray().Select(x => new Guid(x.GetString())).ToArray();
         }
 
         public static ComputeNetworkEndpoint Open(in Guid id)
@@ -40,9 +41,9 @@ namespace WSLAttachSwitch.ComputeService
             return endpoint;
         }
 
-        public static ComputeNetworkEndpoint Create(ComputeNetwork network, in Guid id, object settings)
+        public static ComputeNetworkEndpoint Create(ComputeNetwork network, in Guid id, JsonObject settings)
         {
-            var settingsdoc = JsonSerializer.Serialize(settings);
+            var settingsdoc = settings.ToJsonString();
             string err;
             HcnCreateEndpoint(network, id, settingsdoc, out var ep, out err);
             return ep;
@@ -63,8 +64,8 @@ namespace WSLAttachSwitch.ComputeService
         public JsonElement QueryProperites()
         {
             HcnQueryEndpointProperties(this, "", out var response, out _);
-            var doc = JsonSerializer.Deserialize<JsonElement>(response);
-            return doc;
+            var doc = JsonDocument.Parse(response);
+            return doc.RootElement;
         }
 
         public override bool IsInvalid => handle == IntPtr.Zero;
