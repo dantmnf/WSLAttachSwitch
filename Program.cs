@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.CommandLine;
-using System.Net.Mail;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -109,32 +109,111 @@ namespace WSLAttachSwitch
             return true;
         }
 
-        /// <summary>
-        /// Attach a Hyper-V virtual switch to the WSL2 virtual machine 
-        /// </summary>
-        /// <param name="network">Network name or GUID. Example: Ethernet</param>
-        /// <param name="macAddress">Optional. Fix physical address of network interface to this mac address if specificated. Example: 00-11-45-14-19-19</param>
-        static void Main(string network, string macAddress = null, int vlanIsolationId = -1)
+        static string ParseMacAddress(string input)
         {
-            var status = 0;
-            if (network == null)
+            if (input.Length == 17)
             {
-                Console.WriteLine("Usage: {0} --network <network name or GUID> [--mac-address <addr>] [--]", AppDomain.CurrentDomain.FriendlyName);
-                Console.WriteLine("Check availiable networks with `hnsdiag list networks`");
-                Console.WriteLine("See full help message with {0} -h", AppDomain.CurrentDomain.FriendlyName);
-                status = 1;
-            }
-            else
-            {
-                if (macAddress != null)
+                // XX-XX-XX-XX-XX-XX
+                var sep = input[2];
+                if (sep != ':' && sep != '-' && sep != '.') return null;
+                for (int i = 0; i < 17; i += 1)
                 {
-                    macAddress = macAddress.Trim().Replace(':', '-').ToLowerInvariant();
+                    if (i == 2 || i == 5 || i == 8 || i == 11 || i == 14)
+                    {
+                        if (input[i] != sep) return null;
+                    }
+                    else if (!Uri.IsHexDigit(input[i]))
+                    {
+                        return null;
+                    }
                 }
-                var result = Attach(network, macAddress, vlanIsolationId);
-                status = result ? 0 : 1;
+                return input.Replace(sep, '-').ToUpperInvariant();
             }
+            else if (input.Length == 14)
+            {
+                // XXXX-XXXX-XXXX
+                var sep = input[4];
+                if (sep != ':' && sep != '-' && sep != '.') return null;
+                for (int i = 0; i < 14; i += 1)
+                {
+                    if (i == 4 || i == 9)
+                    {
+                        if (input[i] != sep) return null;
+                    }
+                    else if (!Uri.IsHexDigit(input[i]))
+                    {
+                        return null;
+                    }
+                }
+                return string.Format("{0}-{1}-{2}-{3}-{4}-{5}",
+                    input.Substring(0, 2),
+                    input.Substring(2, 2),
+                    input.Substring(5, 2),
+                    input.Substring(7, 2),
+                    input.Substring(10, 2),
+                    input.Substring(12, 2)
+                ).ToUpperInvariant();
+            }
+            else if (input.Length == 12)
+            {
+                // XXXXXXXXXXXX
+                for (int i = 0; i < 12; i += 1)
+                {
+                    if (!Uri.IsHexDigit(input[i]))
+                    {
+                        return null;
+                    }
+                }
+                return string.Format("{0}-{1}-{2}-{3}-{4}-{5}",
+                    input.Substring(0, 2),
+                    input.Substring(2, 2),
+                    input.Substring(4, 2),
+                    input.Substring(6, 2),
+                    input.Substring(8, 2),
+                    input.Substring(10, 2)
+                ).ToUpperInvariant();
+            }
+            return null;
+        }
 
-            Environment.Exit(status);
+        static int Main(string[] args)
+        {
+            var command = new RootCommand("Attach a Hyper-V virtual switch to the WSL2 virtual machine");
+            var macAddressOption = new Option<string>(
+                name: "--mac",
+                description: "If specified, use this physical address for the virtual interface instead of random one.",
+                parseArgument: static result =>
+                {
+                    if (result.Tokens.Count == 0) return null;
+                    var raw = result.Tokens.Single().Value;
+                    var mac = Program.ParseMacAddress(raw);
+                    if (mac == null) result.ErrorMessage = "Invalid MAC address";
+                    return mac;
+                });
+            var vlanIdOption = new Option<int?>("--vlan", "If specified, enable VLAN filtering with this VLAN ID for the virtual interface.");
+            vlanIdOption.AddValidator(static result =>
+            {
+                var vlanid = result.GetValueOrDefault<int?>();
+                if (vlanid != null && (vlanid < 0 || vlanid > 4095))
+                {
+                    result.ErrorMessage = "VLAN ID must be between 0 and 4095";
+                }
+            });
+            var networkArg = new Argument<string>("network name or GUID", "Name or GUID of the virtual switch to attach to the WSL2 virtual machine. Check availiable networks with `hnsdiag list networks`");
+
+            command.AddOption(macAddressOption);
+            command.AddOption(vlanIdOption);
+            command.AddArgument(networkArg);
+            var status = 0;
+
+            command.SetHandler((network, macAddress, vlanId) =>
+            {
+                status = Attach(network, macAddress, vlanId ?? -1) ? 0 : 1;
+
+            }, networkArg, macAddressOption, vlanIdOption);
+
+            command.Invoke(args);
+            return status;
         }
     }
 }
