@@ -37,7 +37,7 @@ namespace WSLAttachSwitch
             return new Guid(guidbytes);
         }
 
-        static bool Attach(string networkName, string macAddress = null)
+        static bool Attach(string networkName, string macAddress = null, int vlanIsolationId = -1)
         {
             try
             {
@@ -78,7 +78,22 @@ namespace WSLAttachSwitch
                         return true;
                     }
                 }
-                using var endpoint = ComputeNetworkEndpoint.Create(network, epid, new { VirtualNetwork = netid.ToString() });
+                object policies = null;
+                if (vlanIsolationId >= 0)
+                {
+                    policies = new object[] {
+                        new
+                        {
+                            Type = "VLAN",
+                            Settings = new { IsolationId = (uint) vlanIsolationId },
+                        }
+                    };
+                }
+                using var endpoint = ComputeNetworkEndpoint.Create(network, epid, new {
+                    VirtualNetwork = netid.ToString(),
+                    MacAddress = macAddress,
+                    Policies = policies
+                });
                 system.Modify(
                     "VirtualMachine/Devices/NetworkAdapters/bridge_" + netid.ToString("N"),
                     ModifyRequestType.Add,
@@ -99,7 +114,7 @@ namespace WSLAttachSwitch
         /// </summary>
         /// <param name="network">Network name or GUID. Example: Ethernet</param>
         /// <param name="macAddress">Optional. Fix physical address of network interface to this mac address if specificated. Example: 00-11-45-14-19-19</param>
-        static void Main(string network, string macAddress = null)
+        static void Main(string network, string macAddress = null, int vlanIsolationId = -1)
         {
             var status = 0;
             if (network == null)
@@ -115,7 +130,7 @@ namespace WSLAttachSwitch
                 {
                     macAddress = macAddress.Trim().Replace(':', '-').ToLowerInvariant();
                 }
-                var result = Attach(network, macAddress);
+                var result = Attach(network, macAddress, vlanIsolationId);
                 status = result ? 0 : 1;
             }
 

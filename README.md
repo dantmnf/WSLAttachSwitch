@@ -44,6 +44,12 @@ root@WSL ~ # # Make use of new interface
 root@WSL ~ # dhclient eth1
 ```
 
+```
+WSLAttachSwitch.exe --network Ethernet
+WSLAttachSwitch.exe --network Ethernet --mac-address 00-11-45-14-19-19
+WSLAttachSwitch.exe --network Ethernet --mac-address 00-11-45-14-19-19 --vlan-isolation-id 2
+```
+
 ## Notes
 
 This tool needs to be run again if the WSL VM has been restarted.
