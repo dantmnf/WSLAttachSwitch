@@ -12,10 +12,8 @@ then it is officially available on WSL2 preview, check [this comment](https://gi
 
 ## Arguments
 ```
---network <network>          Network name or GUID. Example: Ethernet
---mac-address <mac-address>  Optional. Fix physical address of network interface to this mac address if specificated. Example: 00-11-45-14-19-19
---version                    Show version information
--?, -h, --help               Show help and usage information
+--mac <mac>     If specified, use this physical address for the virtual interface instead of random one.
+--vlan <vlan>   If specified, enable VLAN filtering with this VLAN ID for the virtual interface.
 ```
 
 ## Example
@@ -29,7 +27,7 @@ root@WSL ~ # ip link
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
     link/ether 00:15:5d:f3:58:46 brd ff:ff:ff:ff:ff:ff
 root@WSL ~ # # Attach to Hyper-V virtual switch "New Virtual Switch"
-root@WSL ~ # /mnt/c/some/random/path/WSLAttachSwitch.exe --network "New Virtual Switch"
+root@WSL ~ # /mnt/c/some/random/path/WSLAttachSwitch.exe "New Virtual Switch"
 root@WSL ~ # # Now we have a new interface "eth1"
 root@WSL ~ # ip link
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
@@ -44,10 +42,12 @@ root@WSL ~ # # Make use of new interface
 root@WSL ~ # dhclient eth1
 ```
 
+All the following invocations are supported:
 ```
-WSLAttachSwitch.exe --network Ethernet
-WSLAttachSwitch.exe --network Ethernet --mac-address 00-11-45-14-19-19
-WSLAttachSwitch.exe --network Ethernet --mac-address 00-11-45-14-19-19 --vlan-isolation-id 2
+WSLAttachSwitch.exe "New Virtual Switch"
+WSLAttachSwitch.exe "New Virtual Switch" --mac 00-11-45-14-19-19
+WSLAttachSwitch.exe --mac 00:11:45:14:19:19 "New Virtual Switch"
+WSLAttachSwitch.exe --mac 0011.4514.1919 "New Virtual Switch" --vlan 2
 ```
 
 ## Notes
