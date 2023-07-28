@@ -1,4 +1,6 @@
 ﻿using System;
+using System.CommandLine;
+using System.Net.Mail;
 using System.Runtime.InteropServices;
 using System.Text;
 using WSLAttachSwitch.ComputeService;
@@ -7,6 +9,7 @@ namespace WSLAttachSwitch
 {
     class Program
     {
+
         static ComputeNetwork FindNetworkByName(string name)
         {
             var networks = ComputeNetwork.Enumerate();
@@ -33,7 +36,7 @@ namespace WSLAttachSwitch
             return new Guid(guidbytes);
         }
 
-        static bool Attach(string networkName)
+        static bool Attach(string networkName, string macAddress = null)
         {
             try
             {
@@ -75,7 +78,12 @@ namespace WSLAttachSwitch
                     }
                 }
                 using var endpoint = ComputeNetworkEndpoint.Create(network, epid, new { VirtualNetwork = netid.ToString() });
-                system.Modify("VirtualMachine/Devices/NetworkAdapters/bridge_" + netid.ToString("N"), ModifyRequestType.Add, new { EndpointId = epid.ToString() }, null);
+                system.Modify(
+                    "VirtualMachine/Devices/NetworkAdapters/bridge_" + netid.ToString("N"),
+                    ModifyRequestType.Add,
+                    new { EndpointId = epid.ToString(), MacAddress = macAddress },
+                    null
+                );
             }
             catch (Exception e)
             {
@@ -85,20 +93,31 @@ namespace WSLAttachSwitch
             return true;
         }
 
-        static void Main(string[] args)
+        /// <summary>
+        /// Attach a Hyper-V virtual switch to the WSL2 virtual machine 
+        /// </summary>
+        /// <param name="network">network name or GUID</param>
+        /// <param name="macAddress">Fix physical address of network interface to this mac address if specificated</param>
+        static void Main(string network, string macAddress = null)
         {
             var status = 0;
-            if (args.Length != 1)
+            if (network == null)
             {
-                Console.WriteLine("Usage: {0} <network name or GUID>", AppDomain.CurrentDomain.FriendlyName);
+                Console.WriteLine("Usage: {0} --network <network name or GUID> [--mac-address <addr>] [--]", AppDomain.CurrentDomain.FriendlyName);
                 Console.WriteLine("Check availiable networks with `hnsdiag list networks`");
+                Console.WriteLine("See full help message with {0} -h", AppDomain.CurrentDomain.FriendlyName);
                 status = 1;
             }
             else
             {
-                var result = Attach(args[0]);
+                if (macAddress != null)
+                {
+                    macAddress = macAddress.Trim().Replace(':', '-').ToLowerInvariant();
+                }
+                var result = Attach(network, macAddress);
                 status = result ? 0 : 1;
             }
+
             Environment.Exit(status);
         }
     }
