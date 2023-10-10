@@ -27,7 +27,7 @@ root@WSL ~ # ip link
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
     link/ether 00:15:5d:f3:58:46 brd ff:ff:ff:ff:ff:ff
 root@WSL ~ # # Attach to Hyper-V virtual switch "New Virtual Switch"
-root@WSL ~ # /mnt/c/some/random/path/WSLAttachSwitch.exe "New Virtual Switch"
+root@WSL ~ # cmd.exe /c "c:\some\random\path\WSLAttachSwitch.exe" "New Virtual Switch"
 root@WSL ~ # # Now we have a new interface "eth1"
 root@WSL ~ # ip link
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
