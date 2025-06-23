@@ -23,7 +23,9 @@ namespace WSLAttachSwitch
                 }
                 network.Close();
             }
-            throw Marshal.GetExceptionForHR(unchecked((int)0x80070037));
+
+            Exception? marshalException = Marshal.GetExceptionForHR(unchecked((int)0x80070037));
+            throw marshalException ?? new Exception("Unknown error while finding network: " + name);
         }
 
         static Guid XorGuid(in Guid input, ReadOnlySpan<byte> xorWith)
@@ -37,7 +39,7 @@ namespace WSLAttachSwitch
             return new Guid(guidbytes);
         }
 
-        static bool Attach(string networkName, string macAddress = null, int? vlanIsolationId = null)
+        static bool Attach(string networkName, string? macAddress = null, int? vlanIsolationId = null)
         {
             try
             {
@@ -47,7 +49,12 @@ namespace WSLAttachSwitch
                     Console.Error.WriteLine("Can't find unique WSL VM. Is WSL2 running?");
                     return false;
                 }
-                var systemid = systems[0].GetProperty("Id").GetString();
+                string? systemid = systems[0].GetProperty("Id").GetString();
+                if (string.IsNullOrEmpty(systemid))
+                {
+                    Console.Error.WriteLine("Can't detect ID of WSL2 VM.");
+                    return false;
+                }
                 using var system = ComputeSystem.Open(systemid);
                 var props = system.QueryProperites();
                 ComputeNetwork network;
@@ -58,8 +65,14 @@ namespace WSLAttachSwitch
                 else
                 {
                     network = FindNetworkByName(networkName);
-                    var netprops = network.QueryProperites();
-                    netid = new Guid(netprops.GetProperty("ID").GetString());
+                    JsonElement netprops = network.QueryProperites();
+                    string? networkId = netprops.GetProperty("Id").GetString();
+                    if (string.IsNullOrEmpty(networkId))
+                    {
+                        Console.Error.WriteLine("Can't detect network ID.");
+                        return false;
+                    }
+                    netid = new Guid(networkId);
                 }
                 var epid = XorGuid(netid, "WSL2BrdgEp"u8);
                 var eps = ComputeNetworkEndpoint.Enumerate();
@@ -78,7 +91,7 @@ namespace WSLAttachSwitch
                         return true;
                     }
                 }
-                JsonNode policies = null;
+                JsonNode? policies = null;
                 if (vlanIsolationId != null)
                 {
                     policies = new JsonArray(
@@ -110,7 +123,7 @@ namespace WSLAttachSwitch
             return true;
         }
 
-        static string ParseMacAddress(string input)
+        static string? ParseMacAddress(string input)
         {
             if (input.Length == 17)
             {
@@ -179,42 +192,67 @@ namespace WSLAttachSwitch
 
         static int Main(string[] args)
         {
-            var command = new RootCommand("Attach a Hyper-V virtual switch to the WSL2 virtual machine");
-            var macAddressOption = new Option<string>(
-                name: "--mac",
-                description: "If specified, use this physical address for the virtual interface instead of random one.",
-                parseArgument: static result =>
+            RootCommand command = new("Attach a Hyper-V virtual switch to the WSL2 virtual machine");
+
+            Option<string?> macAddressOption = new("--mac") 
+            {
+                Description = "If specified, use this physical address for the virtual interface instead of random one.",
+                Arity = ArgumentArity.ExactlyOne,
+                Required = false,
+                CustomParser = static result =>
                 {
-                    if (result.Tokens.Count == 0) return null;
-                    var raw = result.Tokens.Single().Value;
-                    var mac = Program.ParseMacAddress(raw);
-                    if (mac == null) result.ErrorMessage = "Invalid MAC address";
+                    if (result.Tokens.Count == 0) 
+                        return null;
+
+                    string raw = result.Tokens.Single().Value;
+                    string? mac = Program.ParseMacAddress(raw);
+
+                    if (mac == null)
+                            result.AddError("Invalid MAC address");
+
                     return mac;
-                });
-            var vlanIdOption = new Option<int?>("--vlan", "If specified, enable VLAN filtering with this VLAN ID for the virtual interface.");
-            vlanIdOption.AddValidator(static result =>
-            {
-                var vlanid = result.GetValueOrDefault<int?>();
-                if (vlanid != null && (vlanid < 0 || vlanid > 4095))
-                {
-                    result.ErrorMessage = "VLAN ID must be between 0 and 4095";
                 }
-            });
-            var networkArg = new Argument<string>("network name or GUID", "Name or GUID of the virtual switch to attach to the WSL2 virtual machine. Check availiable networks with `hnsdiag list networks`");
+            };
 
-            command.AddOption(macAddressOption);
-            command.AddOption(vlanIdOption);
-            command.AddArgument(networkArg);
-            var status = 0;
-
-            command.SetHandler((network, macAddress, vlanId) =>
+            Option<int?> vlanIdOption = new ("--vlan") 
             {
-                status = Attach(network, macAddress, vlanId) ? 0 : 1;
+                Description = "If specified, enable VLAN filtering with this VLAN ID for the virtual interface.",
+                Required = false,
+                Arity = ArgumentArity.ExactlyOne,
+                Validators = { 
+                    static result => 
+                    {
+                        int? vlanid = result.GetValueOrDefault<int?>();
+                        if (vlanid != null && (vlanid < 0 || vlanid > 4095))
+                        {
+                            result.AddError("VLAN ID must be between 0 and 4095");
+                        }
+                    }
+                }
+            };
 
-            }, networkArg, macAddressOption, vlanIdOption);
+            Argument<string> networkArg = new("network name or GUID") 
+            {
+                Description = "Name or GUID of the virtual switch to attach to the WSL2 virtual machine. Check availiable networks with `hnsdiag list networks`",
+                Arity = ArgumentArity.ExactlyOne
+            };
 
-            command.Invoke(args);
-            return status;
+            command.Add(macAddressOption);
+            command.Add(vlanIdOption);
+            command.Add(networkArg);
+
+            int exitCode = 0;
+
+            command.SetAction(parseResult =>
+            {
+                exitCode = Attach(parseResult.GetRequiredValue<string>(networkArg), parseResult.GetValue<string?>(macAddressOption), parseResult.GetValue<int?>(vlanIdOption)) ? 0 : 1;
+
+            });
+
+            ParseResult parseResult = command.Parse(args);
+            parseResult.Invoke();
+
+            return exitCode;
         }
     }
 }

@@ -71,7 +71,7 @@ namespace WSLAttachSwitch.ComputeService
             return doc.RootElement;
         }
 
-        public string Modify(string resourcePath, ModifyRequestType requestType, JsonObject settings, JsonObject guestRequest)
+        public string Modify(string resourcePath, ModifyRequestType requestType, JsonObject settings, JsonObject? guestRequest)
         {
             var request = new JsonObject
             {
