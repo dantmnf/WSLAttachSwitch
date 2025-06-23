@@ -231,7 +231,7 @@ namespace WSLAttachSwitch
                 }
             };
 
-            Option<bool?> saveConfigOption= new("--save-config")
+            Option<bool?> saveConfigOption= new("--save-params")
             {
                 Description = "Controls explicitly, if the chosen parameters are going to be saved (will be used when program is launched without args)",
                 Required = false,
@@ -263,11 +263,15 @@ namespace WSLAttachSwitch
                     exitCode = Attach(paramsToBeUsed.Network, paramsToBeUsed.MacAddress, paramsToBeUsed.Vlan) ? 0 : 1;
                 }                
 
-                bool saveConfig = parseResult.GetValue<bool?>(saveConfigOption) != false; //Save the config if the option is true or not specified
+                bool saveConfig = parseResult.GetValue<bool?>(saveConfigOption) == true;
                 Params paramsToSave = new Params(network ?? string.Empty, macAddress, vlanId);
                 if (saveConfig && paramsToSave.AreValid()) //Don't save, if the parameters are not valid (-> if no network name was provided)
                 {
                     ParamService.Save(paramsToSave);
+                }
+                else
+                {
+                    Console.Error.WriteLine("Didn't save the passed parameters because they are invalid!");
                 }
             });
 
