@@ -17,7 +17,7 @@ namespace WSLAttachSwitch
             foreach (var id in networks)
             {
                 var network = ComputeNetwork.Open(id);
-                if (name.Equals(network.QueryProperites().GetProperty("Name").GetString(), StringComparison.OrdinalIgnoreCase))
+                if (name.Equals(network.QueryProperites().GetPropertyCaseInsensitive("Name").GetString(), StringComparison.OrdinalIgnoreCase))
                 {
                     return network;
                 }
@@ -49,7 +49,7 @@ namespace WSLAttachSwitch
                     Console.Error.WriteLine("Can't find unique WSL VM. Is WSL2 running?");
                     return false;
                 }
-                string? systemid = systems[0].GetProperty("Id").GetString();
+                string? systemid = systems[0].GetPropertyCaseInsensitive("Id").GetString();
                 if (string.IsNullOrEmpty(systemid))
                 {
                     Console.Error.WriteLine("Can't detect ID of WSL2 VM.");
@@ -66,7 +66,7 @@ namespace WSLAttachSwitch
                 {
                     network = FindNetworkByName(networkName);
                     JsonElement netprops = network.QueryProperites();
-                    string? networkId = netprops.GetProperty("Id").GetString();
+                    string? networkId = netprops.GetPropertyCaseInsensitive("Id").GetString();
                     if (string.IsNullOrEmpty(networkId))
                     {
                         Console.Error.WriteLine("Can't detect network ID.");
