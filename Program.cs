@@ -231,7 +231,7 @@ namespace WSLAttachSwitch
                 }
             };
 
-            Option<bool?> saveConfigOption= new("--save-params")
+            Option<bool?> saveConfigOption= new("--save-params", "-s")
             {
                 Description = "Controls explicitly, if the chosen parameters are going to be saved (will be used when program is launched without args)",
                 Required = false,
