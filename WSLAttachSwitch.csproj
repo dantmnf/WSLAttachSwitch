@@ -9,6 +9,7 @@
 
   <PropertyGroup>
     <PublishAot>true</PublishAot>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
@@ -19,6 +20,7 @@
     <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
     <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
     <InvariantGlobalization>true</InvariantGlobalization>
+	<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>WSLAttachSwitch.manifest</ApplicationManifest>

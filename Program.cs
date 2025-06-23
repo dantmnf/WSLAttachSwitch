@@ -231,22 +231,44 @@ namespace WSLAttachSwitch
                 }
             };
 
-            Argument<string> networkArg = new("network name or GUID") 
+            Option<bool?> saveConfigOption= new("--save-config")
+            {
+                Description = "Controls explicitly, if the chosen parameters are going to be saved (will be used when program is launched without args)",
+                Required = false,
+                Arity = ArgumentArity.ZeroOrOne
+            };
+
+            Argument<string?> networkArg = new("network name or GUID") 
             {
                 Description = "Name or GUID of the virtual switch to attach to the WSL2 virtual machine. Check availiable networks with `hnsdiag list networks`",
-                Arity = ArgumentArity.ExactlyOne
+                Arity = ArgumentArity.ZeroOrOne
             };
 
             command.Add(macAddressOption);
             command.Add(vlanIdOption);
             command.Add(networkArg);
+            command.Add(saveConfigOption);
 
-            int exitCode = 0;
+            int exitCode = 1;
 
             command.SetAction(parseResult =>
             {
-                exitCode = Attach(parseResult.GetRequiredValue<string>(networkArg), parseResult.GetValue<string?>(macAddressOption), parseResult.GetValue<int?>(vlanIdOption)) ? 0 : 1;
+                string? network = parseResult.GetValue<string?>(networkArg);
+                string? macAddress = parseResult.GetValue<string?>(macAddressOption);
+                int? vlanId = parseResult.GetValue<int?>(vlanIdOption);
 
+                bool hasRequiredParameters = ParamService.GetOrLoadParams(network, macAddress, vlanId, out Params paramsToBeUsed);
+                if (hasRequiredParameters)
+                {
+                    exitCode = Attach(paramsToBeUsed.Network, paramsToBeUsed.MacAddress, paramsToBeUsed.Vlan) ? 0 : 1;
+                }                
+
+                bool saveConfig = parseResult.GetValue<bool?>(saveConfigOption) != false; //Save the config if the option is true or not specified
+                Params paramsToSave = new Params(network ?? string.Empty, macAddress, vlanId);
+                if (saveConfig && paramsToSave.AreValid()) //Don't save, if the parameters are not valid (-> if no network name was provided)
+                {
+                    ParamService.Save(paramsToSave);
+                }
             });
 
             ParseResult parseResult = command.Parse(args);
