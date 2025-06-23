@@ -18,7 +18,7 @@ jobs:
       run: |
         dotnet publish -o bin\publish -c Debug -r win-x64
     - name: artifact
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v4.0.0
       with:
         # Artifact name
         name: WSLAttachSwitch
