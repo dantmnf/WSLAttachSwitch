@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <PublishAot>true</PublishAot>
-	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>

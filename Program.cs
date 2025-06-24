@@ -233,7 +233,7 @@ namespace WSLAttachSwitch
 
             Option<bool?> saveConfigOption= new("--save-params", "-s")
             {
-                Description = "Controls explicitly, if the chosen parameters are going to be saved (will be used when program is launched without args)",
+                Description = "Causes the provided parameters to be persisted (will be used when program is launched without a network given)",
                 Required = false,
                 Arity = ArgumentArity.ZeroOrOne
             };
@@ -268,10 +268,7 @@ namespace WSLAttachSwitch
                 if (saveConfig && paramsToSave.AreValid()) //Don't save, if the parameters are not valid (-> if no network name was provided)
                 {
                     ParamService.Save(paramsToSave);
-                }
-                else
-                {
-                    Console.Error.WriteLine("Didn't save the passed parameters because they are invalid!");
+                    Console.WriteLine("Parameters saved, will be reused when the tool is invoked without a network provided.");
                 }
             });
 
