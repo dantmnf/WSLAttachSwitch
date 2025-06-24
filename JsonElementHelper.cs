@@ -9,13 +9,22 @@ namespace WSLAttachSwitch
 
         public static JsonElement GetPropertyCaseInsensitive(this JsonElement jsonElement, string propertyName)
         {
-            foreach (JsonProperty property in jsonElement.EnumerateObject())
+            if (jsonElement.TryGetProperty(propertyName, out JsonElement jsonProperty))
             {
-                if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+                return jsonProperty;
+            }
+            else
+            {
+                //On some machines (not sure depending on what factor exactly), the property names within the Hyper-V API response come entirely upper cased (opposed to the provided schema), therefore the fallback here:
+                foreach (JsonProperty property in jsonElement.EnumerateObject())
                 {
-                    return property.Value;
+                    if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return property.Value;
+                    }
                 }
             }
+
 
             throw new KeyNotFoundException($"Property '{propertyName}' not found in JSON element.");
         }
