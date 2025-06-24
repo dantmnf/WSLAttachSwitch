@@ -16,6 +16,7 @@ then it is officially available on WSL2 preview, check [this comment](https://gi
 ```
 --mac <mac>     If specified, use this physical address for the virtual interface instead of random one.
 --vlan <vlan>   If specified, enable VLAN filtering with this VLAN ID for the virtual interface.
+--save-params   If specified, will save the passed parameters to %appdata%\WSLAttachSwitch\params.json (will be read from there if no network name is passed when the tool is launched afterwards), alternatively -s as short form
 ```
 
 ## Example
@@ -50,6 +51,8 @@ WSLAttachSwitch.exe "New Virtual Switch"
 WSLAttachSwitch.exe "New Virtual Switch" --mac 00-11-45-14-19-19
 WSLAttachSwitch.exe --mac 00:11:45:14:19:19 "New Virtual Switch"
 WSLAttachSwitch.exe --mac 0011.4514.1919 "New Virtual Switch" --vlan 2
+WSLAttachSwitch.exe "New Virtual Switch" --save-params
+WSLAttachSwitch.exe #If the tool was previously invoked with --save-params, then it will re-use the parameters from that invocation
 ```
 
 ## Notes
